@@ -98,6 +98,68 @@ FROM EMPLOYEES e
 WHERE e.COMMISSION_PCT IS NOT NULL;
 
 
+-- FIRST NAME 이 'CURTIS' 인 사람의 first name 과 last name , email , phone number,job id 조회
+-- 단 job id 는 소문자로 출력한다
+SELECT e.FIRST_NAME , e.LAST_NAME, e.EMAIL,e.PHONE_NUMBER,lower(e.JOB_ID) AS job_id
+FROM EMPLOYEES e 
+WHERE e.FIRST_NAME LIKE ('Curtis');
+
+
+
+-- 부서번호가 60 70 80 90 인 사원들의 사번 , first name , last name ,hire date, jon id 조회
+--단 job id 가 IT PROG 인 사원의 경우 '프로그래머' 로 변경하여 출력한다.
+SELECT e.DEPARTMENT_ID,e.FIRST_NAME,e.LAST_NAME,e.HIRE_DATE,REPlACE(e.JOB_ID,'IT_PROG','프로그래머') AS job_id
+FROM EMPLOYEES e 
+WHERE e.DEPARTMENT_ID IN(60,70,80,90);
+
+
+
+
+-- job id 가 AD PRES , PU CLERK 인 사원들의 사번 퍼스트네임 라스트네임 부서번호 잡아이디 조회
+-- 단 사원명은 퍼스트네임 라스트네임 을 연결하여 출력한다
+SELECT e.EMPLOYEE_ID ,e.JOB_ID,e.DEPARTMENT_ID,CONCAT(e.FIRST_NAME,e.LAST_NAME) 이름
+FROM EMPLOYEES e 
+WHERE e.JOB_ID IN ('AD_PRES','PU_CLERK');
+
+--입사 10주년이 되는 날짜출력
+SELECT e.EMPLOYEE_ID,e.FIRST_NAME,e.HIRE_DATE,ADD_MONTHS(e.HIRE_DATE,120) 
+FROM EMPLOYEES e 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
