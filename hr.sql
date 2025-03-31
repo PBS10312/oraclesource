@@ -125,19 +125,360 @@ WHERE e.JOB_ID IN ('AD_PRES','PU_CLERK');
 SELECT e.EMPLOYEE_ID,e.FIRST_NAME,e.HIRE_DATE,ADD_MONTHS(e.HIRE_DATE,120) 
 FROM EMPLOYEES e 
 
+-- 회사내의 최대 연봉과 최소 연봉의 차이 조회
+
+SELECT max(e.SALARY) AS 최대연봉, min(e.SALARY) AS 최소연봉, max(e.SALARY)-min(e.SALARY) AS 차이
+FROM EMPLOYEES e 
 
 
 
+-- 매니저로 근무하는 사원들의 숫자를 조회
+
+SELECT COUNT(DISTINCT e.MANAGER_ID)
+FROM EMPLOYEES e 
+
+--부서별 직원 수(부서번호 오름차)
+-- 부서번호 ,직원수
+SELECT e.DEPARTMENT_ID , COUNT(e.DEPARTMENT_ID)
+FROM EMPLOYEES e
+GROUP BY e.DEPARTMENT_ID 
+ORDER BY e.DEPARTMENT_ID
+
+-- 부서별 평균연봉 조회 (부서번호 오름차)
+-- 부서번호 , 평균연봉 (0의 자리에서 반올림)
+SELECT e.DEPARTMENT_ID , ROUND(AVG(e.SALARY),0)
+FROM EMPLOYEES e 
+GROUP BY e.DEPARTMENT_ID
+ORDER BY e.DEPARTMENT_ID ;
+-- 동일한 직무를 가진 사원의 수 조회 
+-- job_id 인원수
+
+SELECT e.JOB_ID, COUNT(e.EMPLOYEE_ID)
+FROM EMPLOYEES e 
+GROUP BY e.JOB_ID
+ORDER BY e.JOB_ID ;
+
+-- 직업 id가 SA_MAN 인 사원들의 최대 연봉보다 높게 받는 사원들의
+-- last_name , job_id , salary 조회
+--내꺼 (출력완) -맞음
+SELECT
+	e.LAST_NAME ,
+	e.JOB_ID,
+	e.SALARY
+FROM
+	EMPLOYEES e
+WHERE
+	e.SALARY >
+(
+	SELECT
+		max(e.SALARY)
+	FROM
+		EMPLOYEES e
+	WHERE
+		e.JOB_ID = 'SA_MAN');
+---------------------------------------------------------------------------
+
+-- 커미션을 받는 사원들의 부서와 연봉이 동일한 사원들의 last_name ,
+-- deptno,salary 조회
+
+-- 내꺼 -------
+SELECT
+	e.LAST_NAME,
+	e.DEPARTMENT_ID,
+	e.SALARY
+FROM
+	EMPLOYEES e
+WHERE
+	(e.COMMISSION_PCT ,
+	e.SALARY) IN
+(
+	SELECT
+		e.COMMISSION_PCT ,
+		e.SALARY
+	FROM
+		EMPLOYEES e
+	ORDER BY
+		e.COMMISSION_PCT);
+-----------------------------------------------------------------------------
+SELECT
+	e.LAST_NAME,
+	e.DEPARTMENT_ID,
+	e.SALARY
+FROM
+	EMPLOYEES e
+WHERE
+	(e.DEPARTMENT_ID  ,
+	e.SALARY) IN
+(
+	SELECT
+		e.DEPARTMENT_ID  ,
+		e.SALARY
+	FROM
+		EMPLOYEES e
+	WHERE e.COMMISSION_PCT > 0);
+
+
+-- 회사 전체 평균 연봉보다 더 버는 사원들 중 last_name 에 u가 있는
+-- 사원들이 근무하는 부서와 같은 부서에 근무하는 사원들의
+-- 사번,last_name,salary 조회
+
+-- 내꺼 --------------------------
+SELECT
+	e.EMPLOYEE_ID,
+	e.LAST_NAME,
+	e.SALARY
+FROM
+	EMPLOYEES e
+WHERE
+	e.SALARY >
+(
+	SELECT
+		MAX(AVG(e.SALARY))
+	FROM
+		EMPLOYEES e
+	WHERE
+		e.LAST_NAME = 'u')
+GROUP BY ;
+
+-------------------------------------------------------------------------
+SELECT e.EMPLOYEE_ID ,e.LAST_NAME,e.SALARY -- (강사님것)
+FROM EMPLOYEES e 
+WHERE e.DEPARTMENT_ID
+IN (SELECT DISTINCT e.DEPARTMENT_ID
+FROM EMPLOYEES e 
+WHERE e.SALARY
+> (SELECT
+		round(AVG(e.SALARY))
+	FROM
+		EMPLOYEES e) AND e.LAST_NAME LIKE '%u%');
+
+--join 사용 ---------------
+SELECT
+	e.EMPLOYEE_ID ,
+	e.LAST_NAME,
+	e.SALARY
+FROM
+	EMPLOYEES e
+JOIN (
+	SELECT
+		DISTINCT e.DEPARTMENT_ID
+	FROM
+		EMPLOYEES e
+	WHERE
+		e.SALARY
+> (
+		SELECT
+			round(AVG(e.SALARY))
+		FROM
+			EMPLOYEES e)
+		AND e.LAST_NAME LIKE '%u%') d
+ON
+	e.DEPARTMENT_ID = d.DEPARTMENT_ID;
 
 
 
+-- 각 부서별 평균 연봉보다 더 받는 동일부서 사원들의 last_name,salary
+--dptpno 해당 부서의 평균연봉 조회(부서별 평균연봉을 기준으로 오름차순)
+-- 내꺼 (출력완)
+SELECT
+	e.LAST_NAME,
+	e.SALARY ,
+	e.DEPARTMENT_ID
+FROM
+	EMPLOYEES e
+WHERE
+	(e.DEPARTMENT_ID ,
+	e.SALARY) IN (
+	SELECT
+		e.DEPARTMENT_ID ,
+		MAX(e.salary)
+	FROM
+		EMPLOYEES
+	GROUP BY
+		e.DEPARTMENT_ID);
+-------------------------------------------------------
+SELECT
+	e.LAST_NAME,
+	e.SALARY ,
+	e.DEPARTMENT_ID
+FROM
+	EMPLOYEES e
+WHERE
+	(e.DEPARTMENT_ID ,
+	e.SALARY) IN (
+	SELECT
+		e.DEPARTMENT_ID ,
+		round(avg(e.salary))
+	FROM
+		EMPLOYEES
+	GROUP BY
+		e.DEPARTMENT_ID);
+--------------------------------
+--join 사용
+SELECT
+	e.LAST_NAME,
+	e.SALARY ,
+	e.DEPARTMENT_ID
+FROM
+	EMPLOYEES e ,
+	(
+	SELECT
+		e.DEPARTMENT_ID ,
+		round(avg(e.salary)) AS dept_sal_avg
+	FROM
+		EMPLOYEES e
+	WHERE
+		e.DEPARTMENT_ID IS NOT NULL
+	GROUP BY
+		e.DEPARTMENT_ID) p
+WHERE
+	e.DEPARTMENT_ID = p.DEPARTMENT_ID
+	AND p.DEPT_SAL_AVG < e.SALARY
+ORDER BY
+	e.DEPARTMENT_ID;
+
+
+--last_name 이 'DAVIES' 인 사람보다 나중에 고용된 사원들의 last_name , hiredate 조회
+-- 내꺼 -- (맞음)
+SELECT
+	e.LAST_NAME,
+	e.HIRE_DATE
+FROM
+	EMPLOYEES e
+WHERE
+	e.HIRE_DATE >
+(
+	SELECT
+		e.HIRE_DATE
+	FROM
+		EMPLOYEES e
+	WHERE
+		e.LAST_NAME = 'Davies');
+-------------------------------------------------------------
 
 
 
+--last_name 이 'King' 인 사원을 매니저로 두고 있는 모든 사원들의  last_name , salary 조회
+-- 내꺼 --
+SELECT
+	e.LAST_NAME,
+	e.SALARY
+FROM
+	EMPLOYEES e
+WHERE
+	e.MANAGER_ID IN 
+(
+	SELECT
+		e.MANAGER_ID
+	FROM
+		EMPLOYEES e
+	WHERE
+		e.LAST_NAME = 'King');
+--------------------------------------------------------------
+SELECT
+	e.LAST_NAME,
+	e.SALARY
+FROM
+	EMPLOYEES e
+WHERE
+	e.MANAGER_ID IN 
+(
+	SELECT
+		e.EMPLOYEE_ID 
+	FROM
+		EMPLOYEES e
+	WHERE
+		e.LAST_NAME = 'King');
+
+
+--last_name 이 'Hall' 인 사원과 동일한 연봉 및 커미션을 받는 사원들의 last_name,부서번호,연봉 조회
+--단 , Hall 제외
+-- 내꺼 --
+SELECT
+	e.LAST_NAME ,
+	e.DEPARTMENT_ID,
+	e.SALARY
+FROM
+	EMPLOYEES e
+WHERE
+	e.LAST_NAME IN 
+(
+	SELECT
+		e.LAST_NAME
+	FROM
+		EMPLOYEES e
+	WHERE
+		e.LAST_NAME = 'Hall');
+------------------------------------------------------------------------
+SELECT
+	e.LAST_NAME ,
+	e.DEPARTMENT_ID,
+	e.SALARY
+FROM
+	EMPLOYEES e
+WHERE
+	(e.SALARY,NVL(e.COMMISSION_PCT,0)) IN 
+(
+	SELECT
+		e.SALARY,NVL(e.COMMISSION_PCT,0)
+	FROM
+		EMPLOYEES e
+	WHERE
+		e.LAST_NAME = 'Hall') AND e.LAST_NAME != 'Hall';
+
+
+--last_name 이 "Zlotkey" 인 사원과 동일한 부서에서 근무하는 모든 사원들의 사번,고용날짜 조회
+--단 'Zlotkey' 제외
+-- 내꺼 (출력완)
+SELECT
+	e.EMPLOYEE_ID ,
+	e.HIRE_DATE
+FROM
+	EMPLOYEES e
+WHERE
+	e.DEPARTMENT_ID IN 
+(
+	SELECT
+		DEPARTMENT_ID
+	FROM
+		EMPLOYEES e
+	WHERE
+		e.LAST_NAME = 'Zlotkey')AND e.LAST_NAME != 'Zlotkey';
+
+
+--부서가 위치한 지역 국가 Id및 국가명을 조회한다
+-- Location ,departments, countries 테이블사용
+SELECT
+	*
+FROM
+	DEPARTMENTS d
+JOIN LOCATIONS l ON
+	d.LOCATION_ID = l.LOCATION_ID
+JOIN COUNTRIES c ON
+	l.COUNTRY_ID = c.COUNTRY_ID; 
+
+SELECT c.COUNTRY_ID,c.COUNTRY_NAME
+FROM COUNTRIES c 
+WHERE c.COUNTRY_ID IN (
+SELECT
+	DISTINCT l.COUNTRY_ID
+FROM
+	DEPARTMENTS d
+JOIN LOCATIONS l ON
+	d.LOCATION_ID = l.LOCATION_ID);
+
+
+--위치 ID가 1700인 사원들의 연봉과 커미션을 추출한뒤 , 추출된 사원들의 연봉과 커미션이 동일한 사원정보 출력
+--출력 : 사번,이름(first_name + last name), 부서번호 ,급여
 
 
 
-
+SELECT e.EMPLOYEE_ID,e.FIRST_NAME || ' ' ||e.LAST_NAME,e.DEPARTMENT_ID,e.SALARY
+FROM EMPLOYEES e 
+WHERE (e.SALARY,NVL(e.COMMISSION_PCT,0))
+IN (SELECT DISTINCT e.SALARY,NVL(e.COMMISSION_PCT,0)
+FROM EMPLOYEES e JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID 
+WHERE d.LOCATION_ID = 1700);
 
 
 
